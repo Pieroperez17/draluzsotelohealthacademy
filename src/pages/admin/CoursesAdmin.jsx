@@ -3,30 +3,12 @@ import { useForm } from 'react-hook-form';
 import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { getCourses, createCourse, updateCourse, deleteCourse } from '../../services/coursesService';
 import { Badge } from '../../components/ui/Badge';
-import { isSupabaseReady } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('es-PE', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// Banner que avisa si el usuario no está autenticado con Supabase real
-function AuthBanner({ session }) {
-  if (!isSupabaseReady) return null;
-  if (session) return null; // tiene sesión real → sin aviso
-  return (
-    <div className="mb-6 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 flex items-start gap-3">
-      <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-      <div className="text-sm">
-        <p className="font-semibold text-amber-800">Modo demo activo — los cambios no se guardan en la base de datos</p>
-        <p className="text-amber-700 mt-0.5">
-          Para guardar cursos reales, cierra sesión y vuelve a entrar con tu usuario de Supabase Auth creado en el dashboard.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -183,7 +165,6 @@ export function CoursesAdmin() {
   const [editing, setEditing] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [toast, setToast] = useState(null);
-  const { session } = useAuth();
 
   const showToast = (message, type = 'success') => setToast({ message, type });
   const hideToast = () => setToast(null);
@@ -210,12 +191,7 @@ export function CoursesAdmin() {
       setEditing(null);
       loadCourses();
     } catch (err) {
-      showToast(
-        isSupabaseReady && !session
-          ? 'Error: inicia sesión con tu cuenta de Supabase para guardar cambios en la base de datos.'
-          : `Error al guardar: ${err.message}`,
-        'error'
-      );
+      showToast(`Error al guardar: ${err.message}`, 'error');
     }
   };
 
@@ -226,12 +202,7 @@ export function CoursesAdmin() {
       showToast('Curso eliminado');
       loadCourses();
     } catch (err) {
-      showToast(
-        isSupabaseReady && !session
-          ? 'Error: inicia sesión con tu cuenta de Supabase para eliminar cursos.'
-          : `Error al eliminar: ${err.message}`,
-        'error'
-      );
+      showToast(`Error al eliminar: ${err.message}`, 'error');
       setDeleteConfirm(null);
     }
   };
@@ -241,12 +212,7 @@ export function CoursesAdmin() {
       await updateCourse(course.id, { is_visible: !course.is_visible });
       loadCourses();
     } catch (err) {
-      showToast(
-        isSupabaseReady && !session
-          ? 'Inicia sesión con Supabase para cambiar la visibilidad.'
-          : `Error: ${err.message}`,
-        'error'
-      );
+      showToast(`Error: ${err.message}`, 'error');
     }
   };
 
@@ -267,8 +233,6 @@ export function CoursesAdmin() {
           Nuevo curso
         </button>
       </div>
-
-      <AuthBanner session={session} />
 
       {/* Table */}
       <div className="bg-white card overflow-hidden">

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, LogOut, Menu, X, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { setDemoSession } from '../routes/ProtectedRoute';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -15,7 +14,6 @@ export function AdminLayout() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    setDemoSession(false);
     await signOut();
     navigate('/admin/login');
   };
@@ -48,21 +46,22 @@ export function AdminLayout() {
         <h1 className="font-semibold text-brand-dark text-base">Panel de Administración</h1>
         <div className="w-24 flex justify-end">
           {session?.user && (
-            <span className="text-brand-midgray text-xs truncate max-w-[120px] hidden md:block">{session.user.email}</span>
+            <span className="text-brand-midgray text-xs truncate max-w-[120px] hidden md:block">
+              {session.user.email}
+            </span>
           )}
         </div>
       </header>
 
       {/* Body: sidebar + content */}
       <div className="flex">
-        {/* Sidebar — móvil: fixed overlay | desktop: sticky dentro del flow */}
+        {/* Sidebar */}
         <aside className={`
           fixed top-0 left-0 h-screen w-64 bg-brand-dark z-40 transform transition-transform duration-300 pt-[65px]
           lg:sticky lg:top-[65px] lg:h-[calc(100vh-65px)] lg:translate-x-0 lg:flex-shrink-0 lg:w-56 xl:w-64
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           <div className="flex flex-col h-full py-4">
-            {/* Navigation */}
             <nav className="flex-1 px-3 space-y-1">
               <p className="text-brand-midgray text-xs uppercase tracking-wider px-3 mb-3 font-semibold">Menú</p>
               {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
@@ -84,7 +83,6 @@ export function AdminLayout() {
               ))}
             </nav>
 
-            {/* Logout */}
             <div className="px-3 mt-4 border-t border-white/10 pt-4">
               <button
                 onClick={handleSignOut}
@@ -98,7 +96,7 @@ export function AdminLayout() {
         </aside>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-8 min-w-0 lg:ml-0">
+        <main className="flex-1 p-4 lg:p-8 min-w-0">
           <Outlet />
         </main>
       </div>
