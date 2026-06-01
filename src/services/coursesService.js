@@ -17,11 +17,21 @@ export async function getCourses({ visibleOnly = true } = {}) {
   }
 }
 
+// Campos de solo lectura que Supabase genera automáticamente
+const READONLY_FIELDS = ['id', 'created_at', 'updated_at'];
+
+function stripReadonly(obj) {
+  const clean = { ...obj };
+  READONLY_FIELDS.forEach(f => delete clean[f]);
+  return clean;
+}
+
 export async function createCourse(course) {
   if (!isSupabaseReady) return { ...course, id: Date.now() };
+  const payload = stripReadonly(course);
   const { data, error } = await supabase
     .from('courses')
-    .insert([{ ...course, updated_at: new Date().toISOString() }])
+    .insert([payload])
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -30,9 +40,10 @@ export async function createCourse(course) {
 
 export async function updateCourse(id, updates) {
   if (!isSupabaseReady) return { id, ...updates };
+  const payload = { ...stripReadonly(updates), updated_at: new Date().toISOString() };
   const { data, error } = await supabase
     .from('courses')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select()
     .single();
