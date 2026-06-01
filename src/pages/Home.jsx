@@ -6,7 +6,7 @@ import draSoteloImg from '../assets/Dra-Luz-Sotelo-768x768.jpg';
 import { CourseCard } from '../components/courses/CourseCard';
 import { TestimonialCard } from '../components/testimonials/TestimonialCard';
 import { getCourses } from '../services/coursesService';
-import { TESTIMONIALS_DATA } from '../data/courses';
+import { getTestimonials } from '../services/testimonialsService';
 
 const WHATSAPP_URL = 'https://wa.me/51989019135?text=Hola,%20me%20interesa%20información%20sobre%20los%20cursos%20de%20la%20Academia.';
 
@@ -32,11 +32,13 @@ const SOCIAL_LINKS = [
 
 export function Home() {
   const [upcomingCourses, setUpcomingCourses] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
 
   useEffect(() => {
     getCourses().then(all => {
       setUpcomingCourses(all.filter(c => c.status === 'por_realizar').slice(0, 3));
     });
+    getTestimonials().then(setTestimonials);
   }, []);
 
   return (
@@ -185,7 +187,7 @@ export function Home() {
             <div className="section-divider mx-auto" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {TESTIMONIALS_DATA.map(t => (
+            {testimonials.map(t => (
               <TestimonialCard key={t.id} testimonial={t} />
             ))}
           </div>

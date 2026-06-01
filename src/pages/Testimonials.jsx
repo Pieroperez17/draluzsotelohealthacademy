@@ -1,10 +1,21 @@
+import { useEffect, useState } from 'react';
 import { TestimonialCard } from '../components/testimonials/TestimonialCard';
-import { TESTIMONIALS_DATA } from '../data/courses';
+import { getTestimonials } from '../services/testimonialsService';
 import { MessageCircle } from 'lucide-react';
 
 const WHATSAPP_URL = 'https://wa.me/51989019135?text=Hola,%20quisiera%20más%20información%20sobre%20los%20cursos.';
 
 export function Testimonials() {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getTestimonials().then(data => {
+      setTestimonials(data);
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <>
       {/* Hero */}
@@ -20,20 +31,23 @@ export function Testimonials() {
 
       <section className="py-16 lg:py-20">
         <div className="container-site">
-          <div className="text-center mb-10">
-            <p className="text-xs text-brand-midgray mb-2">[Testimonios pendientes de validación y ampliación — en construcción]</p>
-            <p className="text-brand-text max-w-xl mx-auto text-sm">
-              Estos testimonios representan la experiencia de profesionales que participaron en nuestros programas. Próximamente incorporaremos más experiencias verificadas.
-            </p>
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {[1, 2, 3, 4].map(n => (
+                <div key={n} className="card h-48 animate-pulse bg-brand-lightgray" />
+              ))}
+            </div>
+          ) : testimonials.length === 0 ? (
+            <p className="text-center text-brand-midgray py-16">No hay testimonios disponibles por el momento.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {testimonials.map(t => (
+                <TestimonialCard key={t.id} testimonial={t} />
+              ))}
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {TESTIMONIALS_DATA.map(t => (
-              <TestimonialCard key={t.id} testimonial={t} />
-            ))}
-          </div>
-
-          {/* CTA to leave testimonial */}
+          {/* CTA */}
           <div className="mt-16 text-center bg-brand-lightgray rounded-sm p-10">
             <h3 className="text-2xl font-bold text-brand-dark mb-3">¿Participaste en uno de nuestros programas?</h3>
             <p className="text-brand-text mb-6 max-w-lg mx-auto">
