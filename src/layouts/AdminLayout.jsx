@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, LogOut, Menu, X, GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { setDemoSession } from '../routes/ProtectedRoute';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -14,6 +15,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    setDemoSession(false);
     await signOut();
     navigate('/admin/login');
   };

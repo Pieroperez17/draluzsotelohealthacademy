@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { isSupabaseReady } from '../../lib/supabase';
+import { setDemoSession } from '../../routes/ProtectedRoute';
+
+// Credenciales demo (solo activas cuando Supabase NO está configurado)
+const DEMO_EMAIL = 'admin@healthacademy.com';
+const DEMO_PASSWORD = 'Admin2025!';
 
 export function Login() {
   const { signIn } = useAuth();
@@ -14,6 +20,20 @@ export function Login() {
 
   const onSubmit = async ({ email, password }) => {
     setAuthError('');
+
+    // Modo demo: cuando Supabase no está configurado
+    if (!isSupabaseReady) {
+      if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+        setDemoSession(true);
+        navigate('/admin/dashboard');
+        return;
+      } else {
+        setAuthError(`Modo demo activo. Usa: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+        return;
+      }
+    }
+
+    // Autenticación real con Supabase
     const { error } = await signIn(email, password);
     if (error) {
       setAuthError('Credenciales incorrectas. Verifica tu correo y contraseña.');
