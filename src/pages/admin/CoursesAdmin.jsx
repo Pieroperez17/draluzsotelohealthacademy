@@ -1,12 +1,46 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { getCourses, createCourse, updateCourse, deleteCourse } from '../../services/coursesService';
 import { Badge } from '../../components/ui/Badge';
+import { isSupabaseReady } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('es-PE', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// Banner que avisa si el usuario no está autenticado con Supabase real
+function AuthBanner({ session }) {
+  if (!isSupabaseReady) return null;
+  if (session) return null; // tiene sesión real → sin aviso
+  return (
+    <div className="mb-6 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 flex items-start gap-3">
+      <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+      <div className="text-sm">
+        <p className="font-semibold text-amber-800">Modo demo activo — los cambios no se guardan en la base de datos</p>
+        <p className="text-amber-700 mt-0.5">
+          Para guardar cursos reales, cierra sesión y vuelve a entrar con tu usuario de Supabase Auth creado en el dashboard.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-sm shadow-card-hover text-white text-sm font-medium transition-all ${type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
+      {type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+      {message}
+      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100"><X size={14} /></button>
+    </div>
+  );
 }
 
 function CourseForm({ course, onSave, onCancel }) {
@@ -148,6 +182,11 @@ export function CoursesAdmin() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [toast, setToast] = useState(null);
+  const { session } = useAuth();
+
+  const showToast = (message, type = 'success') => setToast({ message, type });
+  const hideToast = () => setToast(null);
 
   const loadCourses = () => {
     getCourses({ visibleOnly: false }).then(data => {
@@ -159,30 +198,63 @@ export function CoursesAdmin() {
   useEffect(() => { loadCourses(); }, []);
 
   const handleSave = async (data) => {
-    if (editing) {
-      await updateCourse(editing.id, data);
-    } else {
-      await createCourse(data);
+    try {
+      if (editing) {
+        await updateCourse(editing.id, data);
+        showToast('Curso actualizado correctamente');
+      } else {
+        await createCourse(data);
+        showToast('Curso creado correctamente');
+      }
+      setFormOpen(false);
+      setEditing(null);
+      loadCourses();
+    } catch (err) {
+      showToast(
+        isSupabaseReady && !session
+          ? 'Error: inicia sesión con tu cuenta de Supabase para guardar cambios en la base de datos.'
+          : `Error al guardar: ${err.message}`,
+        'error'
+      );
     }
-    setFormOpen(false);
-    setEditing(null);
-    loadCourses();
   };
 
   const handleDelete = async (id) => {
-    await deleteCourse(id);
-    setDeleteConfirm(null);
-    loadCourses();
+    try {
+      await deleteCourse(id);
+      setDeleteConfirm(null);
+      showToast('Curso eliminado');
+      loadCourses();
+    } catch (err) {
+      showToast(
+        isSupabaseReady && !session
+          ? 'Error: inicia sesión con tu cuenta de Supabase para eliminar cursos.'
+          : `Error al eliminar: ${err.message}`,
+        'error'
+      );
+      setDeleteConfirm(null);
+    }
   };
 
   const toggleVisibility = async (course) => {
-    await updateCourse(course.id, { is_visible: !course.is_visible });
-    loadCourses();
+    try {
+      await updateCourse(course.id, { is_visible: !course.is_visible });
+      loadCourses();
+    } catch (err) {
+      showToast(
+        isSupabaseReady && !session
+          ? 'Inicia sesión con Supabase para cambiar la visibilidad.'
+          : `Error: ${err.message}`,
+        'error'
+      );
+    }
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-2xl font-bold text-brand-dark">Gestión de Cursos</h2>
           <p className="text-brand-text text-sm mt-1">{courses.length} cursos registrados</p>
@@ -195,6 +267,8 @@ export function CoursesAdmin() {
           Nuevo curso
         </button>
       </div>
+
+      <AuthBanner session={session} />
 
       {/* Table */}
       <div className="bg-white card overflow-hidden">
@@ -212,13 +286,9 @@ export function CoursesAdmin() {
             </thead>
             <tbody className="divide-y divide-brand-gray">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-brand-midgray">Cargando...</td>
-                </tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-midgray">Cargando...</td></tr>
               ) : courses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-brand-midgray">No hay cursos registrados.</td>
-                </tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-brand-midgray">No hay cursos registrados.</td></tr>
               ) : (
                 courses.map(course => (
                   <tr key={course.id} className="hover:bg-brand-lightgray/50 transition-colors">
@@ -226,9 +296,7 @@ export function CoursesAdmin() {
                       <p className="font-medium text-brand-dark line-clamp-1">{course.title}</p>
                       <p className="text-brand-midgray text-xs line-clamp-1 mt-0.5 hidden sm:block">{course.short_description}</p>
                     </td>
-                    <td className="px-4 py-3 text-brand-text hidden md:table-cell whitespace-nowrap">
-                      {formatDate(course.course_date)}
-                    </td>
+                    <td className="px-4 py-3 text-brand-text hidden md:table-cell whitespace-nowrap">{formatDate(course.course_date)}</td>
                     <td className="px-4 py-3 text-brand-text hidden sm:table-cell">{course.modality}</td>
                     <td className="px-4 py-3">
                       <Badge variant={course.status}>

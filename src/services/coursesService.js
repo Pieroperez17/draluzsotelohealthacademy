@@ -12,6 +12,7 @@ export async function getCourses({ visibleOnly = true } = {}) {
     if (error) throw error;
     return data ?? [];
   } catch {
+    // Fallback a mock si la lectura falla
     return visibleOnly ? COURSES_DATA.filter(c => c.is_visible) : [...COURSES_DATA];
   }
 }
@@ -23,7 +24,7 @@ export async function createCourse(course) {
     .insert([{ ...course, updated_at: new Date().toISOString() }])
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data;
 }
 
@@ -35,12 +36,12 @@ export async function updateCourse(id, updates) {
     .eq('id', id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data;
 }
 
 export async function deleteCourse(id) {
   if (!isSupabaseReady) return;
   const { error } = await supabase.from('courses').delete().eq('id', id);
-  if (error) throw error;
+  if (error) throw new Error(error.message);
 }
