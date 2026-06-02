@@ -17,7 +17,12 @@ export function Login() {
     setAuthError('');
     const { data, error } = await signIn(email, password);
     if (error) {
-      setAuthError('Correo o contraseña incorrectos. Verifica tus credenciales.');
+      const msg = error.message?.toLowerCase() ?? '';
+      if (msg.includes('email not confirmed')) {
+        setAuthError('Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.');
+      } else {
+        setAuthError('Correo o contraseña incorrectos. Verifica tus credenciales.');
+      }
       return;
     }
 

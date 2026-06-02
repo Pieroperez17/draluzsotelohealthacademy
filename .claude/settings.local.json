@@ -15,7 +15,8 @@
       "mcp__ff497305-f874-4586-b5d7-e3f73145a837__deploy_to_vercel",
       "Bash(where vercel *)",
       "Bash(npx vercel *)",
-      "Bash(curl -s https://api.github.com/user -H \"Authorization: token $\\(git config --global github.token \\)\")"
+      "Bash(curl -s https://api.github.com/user -H \"Authorization: token $\\(git config --global github.token \\)\")",
+      "mcp__38a172f1-071c-4298-bfe0-ac86eb65456d__list_projects"
     ]
   }
 }

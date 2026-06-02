@@ -14,11 +14,30 @@ export function IntranetLogin() {
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm();
 
+  const handleResend = async (email) => {
+    if (!email) return;
+    const { supabase } = await import('../../lib/supabase');
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) {
+      setAuthError('No se pudo reenviar el correo. Intenta más tarde.');
+    } else {
+      setSuccessMsg('✓ Correo de confirmación reenviado. Revisa tu bandeja de entrada.');
+      setAuthError('');
+    }
+  };
+
   const handleLogin = async ({ email, password }) => {
     setAuthError('');
     const { error } = await signIn(email, password);
     if (error) {
-      setAuthError('Correo o contraseña incorrectos.');
+      const msg = error.message?.toLowerCase() ?? '';
+      if (msg.includes('email not confirmed')) {
+        setAuthError('__email_not_confirmed__' + email);
+      } else if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('invalid email or password')) {
+        setAuthError('Correo o contraseña incorrectos.');
+      } else {
+        setAuthError('Error al iniciar sesión. Intenta nuevamente.');
+      }
     } else {
       navigate('/intranet/dashboard');
     }
@@ -92,15 +111,30 @@ export function IntranetLogin() {
 
           {authError && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-sm text-sm">
-              <p>{authError}</p>
-              {authError.includes('ya está registrado') && (
-                <button
-                  type="button"
-                  onClick={() => { setTab('login'); setAuthError(''); }}
-                  className="mt-2 text-primary underline text-xs font-semibold hover:opacity-80"
-                >
-                  Ir a iniciar sesión →
-                </button>
+              {authError.startsWith('__email_not_confirmed__') ? (
+                <>
+                  <p>Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada (y la carpeta de spam).</p>
+                  <button
+                    type="button"
+                    onClick={() => handleResend(authError.replace('__email_not_confirmed__', ''))}
+                    className="mt-2 text-primary underline text-xs font-semibold hover:opacity-80"
+                  >
+                    Reenviar correo de confirmación →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>{authError}</p>
+                  {authError.includes('ya está registrado') && (
+                    <button
+                      type="button"
+                      onClick={() => { setTab('login'); setAuthError(''); }}
+                      className="mt-2 text-primary underline text-xs font-semibold hover:opacity-80"
+                    >
+                      Ir a iniciar sesión →
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}
