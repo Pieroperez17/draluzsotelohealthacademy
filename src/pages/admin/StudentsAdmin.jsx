@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Users, Plus, Trash2, BookOpen, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { getAllStudents, enrollStudent, unenrollStudent } from '../../services/enrollmentService';
+import { getAllStudents, enrollStudent, unenrollStudent, deleteStudent } from '../../services/enrollmentService';
 import { getCourses } from '../../services/coursesService';
 
 function Toast({ message, type, onClose }) {
@@ -21,6 +21,8 @@ export function StudentsAdmin() {
   const [selected, setSelected] = useState(null); // student seleccionado para inscribir
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [enrolling, setEnrolling] = useState(false);
+  const [deleting, setDeleting] = useState(null); // id del alumno siendo eliminado
+  const [confirmDelete, setConfirmDelete] = useState(null); // student a confirmar eliminación
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
@@ -56,6 +58,20 @@ export function StudentsAdmin() {
       showToast(`Error: ${err.message}`, 'error');
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const handleDeleteStudent = async (student) => {
+    setDeleting(student.id);
+    setConfirmDelete(null);
+    try {
+      await deleteStudent(student.id);
+      showToast(`Cuenta de ${student.full_name || student.email} eliminada`);
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -145,19 +161,67 @@ export function StudentsAdmin() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => { setSelected(student); setSelectedCourseId(''); }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:bg-red-50 px-2.5 py-1.5 rounded-sm transition-colors"
-                      >
-                        <Plus size={13} />
-                        Inscribir
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setSelected(student); setSelectedCourseId(''); }}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:bg-primary/10 px-2.5 py-1.5 rounded-sm transition-colors"
+                        >
+                          <Plus size={13} />
+                          Inscribir
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(student)}
+                          disabled={deleting === student.id}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-sm transition-colors disabled:opacity-40"
+                          title="Eliminar cuenta"
+                        >
+                          {deleting === student.id
+                            ? <span className="w-3 h-3 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                            : <Trash2 size={13} />}
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal confirmación eliminar */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm shadow-card-hover w-full max-w-sm p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={18} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-brand-dark">Eliminar cuenta</h3>
+                <p className="text-brand-text text-sm mt-1">
+                  ¿Estás seguro de que quieres eliminar la cuenta de{' '}
+                  <strong className="text-brand-dark">{confirmDelete.full_name || confirmDelete.email}</strong>?
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 border border-brand-gray text-brand-text font-medium py-2.5 rounded-sm hover:bg-brand-lightgray transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteStudent(confirmDelete)}
+                className="flex-1 bg-red-600 text-white font-semibold py-2.5 rounded-sm hover:bg-red-700 transition-colors text-sm"
+              >
+                Eliminar cuenta
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

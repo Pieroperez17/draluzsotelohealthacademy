@@ -84,3 +84,22 @@ export async function unenrollStudent(userId, courseId) {
     .eq('course_id', courseId);
   if (error) throw new Error(error.message);
 }
+
+/** Eliminar cuenta de alumno completamente (admin) — llama Edge Function con service_role */
+export async function deleteStudent(userId) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ userId }),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Error al eliminar usuario');
+}
