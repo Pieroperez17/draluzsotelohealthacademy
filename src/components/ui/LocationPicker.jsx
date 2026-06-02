@@ -33,7 +33,7 @@ export function LocationPicker({ value, onChange }) {
     setSearching(true);
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&addressdetails=1`,
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&addressdetails=1&countrycodes=pe`,
         { headers: { 'Accept-Language': 'es' } }
       );
       const data = await res.json();
@@ -89,7 +89,7 @@ export function LocationPicker({ value, onChange }) {
             value={query}
             onChange={handleInput}
             onFocus={() => results.length > 0 && setShowResults(true)}
-            placeholder="Busca una dirección, ciudad o lugar..."
+            placeholder="Busca una dirección en Perú (ej: Hospital Rebagliati, Lima)..."
             className="w-full border border-brand-gray rounded-sm pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
           />
           {searching && (
