@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export function ProtectedRoute({ children }) {
+export function ProtectedRoute({ children, redirectTo = '/admin/login' }) {
   const { session, loading } = useAuth();
 
   if (loading) {
@@ -16,7 +16,7 @@ export function ProtectedRoute({ children }) {
   }
 
   if (!session) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return children;

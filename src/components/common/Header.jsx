@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X, Phone, GraduationCap } from 'lucide-react';
 
 const NAV_LINKS = [
   { to: '/', label: 'Inicio' },
@@ -76,7 +76,14 @@ export function Header() {
           </nav>
 
           {/* CTA + hamburger */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link
+              to="/intranet/login"
+              className="hidden sm:inline-flex items-center gap-1.5 border border-brand-gray text-brand-dark text-sm font-semibold px-3 py-2 rounded-sm hover:border-primary hover:text-primary transition-colors duration-200"
+            >
+              <GraduationCap size={15} />
+              Intranet
+            </Link>
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -114,11 +121,18 @@ export function Header() {
                 {label}
               </NavLink>
             ))}
+            <Link
+              to="/intranet/login"
+              className="mt-2 flex items-center justify-center gap-2 border border-brand-gray text-brand-dark text-sm font-semibold px-4 py-3 rounded-sm hover:border-primary hover:text-primary transition-colors"
+            >
+              <GraduationCap size={16} />
+              Intranet
+            </Link>
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 bg-primary text-white text-sm font-semibold px-4 py-3 rounded-sm text-center hover:bg-primary-dark transition-colors"
+              className="mt-2 bg-primary text-white text-sm font-semibold px-4 py-3 rounded-sm text-center hover:bg-primary-dark transition-colors"
             >
               Inscríbete ahora
             </a>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, LogOut, Menu, X, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, BookOpen, LogOut, Menu, X, GraduationCap, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/cursos', icon: BookOpen, label: 'Cursos' },
+  { to: '/admin/estudiantes', icon: Users, label: 'Estudiantes' },
 ];
 
 export function AdminLayout() {

@@ -4,15 +4,26 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
+import { IntranetLayout } from './layouts/IntranetLayout';
 
+// Public pages
 import { Home } from './pages/Home';
 import { Courses } from './pages/Courses';
 import { About } from './pages/About';
 import { Testimonials } from './pages/Testimonials';
 import { Contact } from './pages/Contact';
+
+// Admin pages
 import { Login } from './pages/admin/Login';
 import { Dashboard } from './pages/admin/Dashboard';
 import { CoursesAdmin } from './pages/admin/CoursesAdmin';
+import { CourseDetailAdmin } from './pages/admin/CourseDetailAdmin';
+import { StudentsAdmin } from './pages/admin/StudentsAdmin';
+
+// Intranet pages
+import { IntranetLogin } from './pages/intranet/IntranetLogin';
+import { IntranetDashboard } from './pages/intranet/IntranetDashboard';
+import { IntranetCourse } from './pages/intranet/IntranetCourse';
 
 class ErrorBoundary extends Component {
   state = { error: null };
@@ -41,6 +52,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* ── Sitio público ──────────────────────────── */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/cursos" element={<Courses />} />
@@ -49,19 +61,28 @@ export default function App() {
               <Route path="/contacto" element={<Contact />} />
             </Route>
 
+            {/* ── Admin ──────────────────────────────────── */}
             <Route path="/admin/login" element={<Login />} />
-
             <Route
               path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
+              element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}
             >
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="cursos" element={<CoursesAdmin />} />
+              <Route path="cursos/:id" element={<CourseDetailAdmin />} />
+              <Route path="estudiantes" element={<StudentsAdmin />} />
+            </Route>
+
+            {/* ── Intranet (estudiantes) ─────────────────── */}
+            <Route path="/intranet/login" element={<IntranetLogin />} />
+            <Route
+              path="/intranet"
+              element={<ProtectedRoute redirectTo="/intranet/login"><IntranetLayout /></ProtectedRoute>}
+            >
+              <Route index element={<Navigate to="/intranet/dashboard" replace />} />
+              <Route path="dashboard" element={<IntranetDashboard />} />
+              <Route path="curso/:id" element={<IntranetCourse />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

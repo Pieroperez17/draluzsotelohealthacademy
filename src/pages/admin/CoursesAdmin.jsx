@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, X, Save, AlertCircle, CheckCircle, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getCourses, createCourse, updateCourse, deleteCourse } from '../../services/coursesService';
 import { Badge } from '../../components/ui/Badge';
 
@@ -278,6 +279,13 @@ export function CoursesAdmin() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 justify-end">
+                        <Link
+                          to={`/admin/cursos/${course.id}`}
+                          className="p-1.5 text-brand-midgray hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Recursos y reunión"
+                        >
+                          <Settings size={15} />
+                        </Link>
                         <button
                           onClick={() => { setEditing(course); setFormOpen(true); }}
                           className="p-1.5 text-brand-midgray hover:text-primary hover:bg-red-50 rounded transition-colors"
