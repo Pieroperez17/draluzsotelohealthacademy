@@ -26,13 +26,19 @@ export function StudentsAdmin() {
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   const load = async () => {
-    const [s, c] = await Promise.all([
-      getAllStudents(),
-      getCourses({ visibleOnly: false }),
-    ]);
-    setStudents(s);
-    setCourses(c);
-    setLoading(false);
+    setLoading(true);
+    try {
+      const [s, c] = await Promise.all([
+        getAllStudents(),
+        getCourses({ visibleOnly: false }),
+      ]);
+      setStudents(s);
+      setCourses(c);
+    } catch (err) {
+      showToast(`Error al cargar estudiantes: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
