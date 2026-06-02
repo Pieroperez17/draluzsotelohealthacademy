@@ -48,7 +48,7 @@ export function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark to-primary/20 pointer-events-none" />
         <div className="container-site relative py-20 lg:py-28">
           <div className="max-w-3xl">
-            <div className="inline-block bg-primary/20 border border-primary/40 text-primary text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wider">
+            <div className="inline-block bg-primary border border-primary text-white text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wider">
               Formación Médica Especializada
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white">
