@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './routes/ProtectedRoute';
+import { AdminRoute, StudentRoute } from './routes/ProtectedRoute';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { IntranetLayout } from './layouts/IntranetLayout';
@@ -67,7 +67,7 @@ export default function App() {
             <Route path="/admin/login" element={<Login />} />
             <Route
               path="/admin"
-              element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}
+              element={<AdminRoute><AdminLayout /></AdminRoute>}
             >
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
@@ -82,7 +82,7 @@ export default function App() {
             <Route path="/intranet/login" element={<IntranetLogin />} />
             <Route
               path="/intranet"
-              element={<ProtectedRoute redirectTo="/intranet/login"><IntranetLayout /></ProtectedRoute>}
+              element={<StudentRoute><IntranetLayout /></StudentRoute>}
             >
               <Route index element={<Navigate to="/intranet/dashboard" replace />} />
               <Route path="dashboard" element={<IntranetDashboard />} />

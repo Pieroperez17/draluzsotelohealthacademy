@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 export function Login() {
   const { signIn } = useAuth();
@@ -14,12 +15,27 @@ export function Login() {
 
   const onSubmit = async ({ email, password }) => {
     setAuthError('');
-    const { error } = await signIn(email, password);
+    const { data, error } = await signIn(email, password);
     if (error) {
       setAuthError('Correo o contraseña incorrectos. Verifica tus credenciales.');
-    } else {
-      navigate('/admin/dashboard');
+      return;
     }
+
+    // Verificar que el usuario tiene rol admin antes de redirigir
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profile?.role !== 'admin') {
+      await signIn('', ''); // forzar logout limpiando estado
+      await supabase.auth.signOut();
+      setAuthError('Acceso denegado. Esta sección es solo para administradores.');
+      return;
+    }
+
+    navigate('/admin/dashboard');
   };
 
   return (
