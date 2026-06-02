@@ -36,14 +36,30 @@ export async function getAllStudents() {
   }));
 }
 
-/** Todos los alumnos inscritos en un curso (admin) */
+/** Todos los alumnos inscritos en un curso (admin) — 2 queries para evitar join con RLS */
 export async function getEnrollmentsByCourse(courseId) {
-  const { data, error } = await supabase
+  // Paso 1: inscripciones del curso
+  const { data: enrolls, error: e1 } = await supabase
     .from('course_enrollments')
-    .select('id, enrolled_at, user_id, user_profiles(full_name, email)')
+    .select('id, enrolled_at, user_id')
     .eq('course_id', courseId);
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  if (e1) throw new Error(e1.message);
+  if (!enrolls || enrolls.length === 0) return [];
+
+  // Paso 2: perfiles de los alumnos inscritos
+  const userIds = enrolls.map(e => e.user_id);
+  const { data: profiles, error: e2 } = await supabase
+    .from('user_profiles')
+    .select('id, full_name, email')
+    .in('id', userIds);
+  if (e2) throw new Error(e2.message);
+
+  // Combinar en memoria
+  const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]));
+  return enrolls.map(e => ({
+    ...e,
+    user_profiles: profileMap[e.user_id] ?? { full_name: '—', email: '—' },
+  }));
 }
 
 /** Inscribir alumno a un curso (admin) */

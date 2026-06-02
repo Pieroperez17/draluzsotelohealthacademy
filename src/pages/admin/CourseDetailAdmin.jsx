@@ -33,16 +33,31 @@ export function CourseDetailAdmin() {
   });
 
   const load = async () => {
-    const all = await getCourses({ visibleOnly: false });
-    const found = all.find(c => c.id === courseId);
-    setCourse(found || null);
-    if (found) resetLink({ meeting_link: found.meeting_link || '' });
-    const [r, e] = await Promise.all([
-      getCourseResources(courseId),
-      getEnrollmentsByCourse(courseId),
-    ]);
-    setResources(r);
-    setEnrollments(e);
+    // Cargar curso
+    try {
+      const all = await getCourses({ visibleOnly: false });
+      const found = all.find(c => c.id === courseId);
+      setCourse(found || null);
+      if (found) resetLink({ meeting_link: found.meeting_link || '' });
+    } catch (err) {
+      showToast(`Error cargando curso: ${err.message}`, 'error');
+    }
+
+    // Cargar recursos (independiente)
+    try {
+      const r = await getCourseResources(courseId);
+      setResources(r);
+    } catch (err) {
+      showToast(`Error cargando recursos: ${err.message}`, 'error');
+    }
+
+    // Cargar alumnos inscritos (independiente)
+    try {
+      const e = await getEnrollmentsByCourse(courseId);
+      setEnrollments(e);
+    } catch (err) {
+      showToast(`Error cargando alumnos: ${err.message}`, 'error');
+    }
   };
 
   useEffect(() => { load(); }, [courseId]);
