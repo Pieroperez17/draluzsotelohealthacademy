@@ -19,6 +19,8 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { CoursesAdmin } from './pages/admin/CoursesAdmin';
 import { CourseDetailAdmin } from './pages/admin/CourseDetailAdmin';
 import { StudentsAdmin } from './pages/admin/StudentsAdmin';
+import { TestimonialsAdmin } from './pages/admin/TestimonialsAdmin';
+import { SettingsAdmin } from './pages/admin/SettingsAdmin';
 
 // Intranet pages
 import { IntranetLogin } from './pages/intranet/IntranetLogin';
@@ -72,6 +74,8 @@ export default function App() {
               <Route path="cursos" element={<CoursesAdmin />} />
               <Route path="cursos/:id" element={<CourseDetailAdmin />} />
               <Route path="estudiantes" element={<StudentsAdmin />} />
+              <Route path="testimonios" element={<TestimonialsAdmin />} />
+              <Route path="configuracion" element={<SettingsAdmin />} />
             </Route>
 
             {/* ── Intranet (estudiantes) ─────────────────── */}
