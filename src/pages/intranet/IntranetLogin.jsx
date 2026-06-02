@@ -27,18 +27,39 @@ export function IntranetLogin() {
   const handleRegister = async ({ full_name, email, password }) => {
     setAuthError('');
     const { supabase } = await import('../../lib/supabase');
-    const { error } = await supabase.auth.signUp({
+
+    // Intentar registro
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name, role: 'student' } },
     });
+
     if (error) {
-      setAuthError(error.message);
-    } else {
-      setSuccessMsg('✓ Cuenta creada. Revisa tu correo para confirmar o inicia sesión directamente.');
-      setTab('login');
-      reset();
+      // Traducir errores comunes al español
+      const msg = error.message?.toLowerCase() ?? '';
+      if (msg.includes('already registered') || msg.includes('already been registered') || error.code === 'user_already_exists') {
+        setAuthError('Este correo ya está registrado. Por favor inicia sesión en la pestaña "Iniciar sesión".');
+      } else if (msg.includes('password') && msg.includes('short')) {
+        setAuthError('La contraseña debe tener al menos 6 caracteres.');
+      } else if (msg.includes('invalid email') || msg.includes('email')) {
+        setAuthError('El correo ingresado no es válido.');
+      } else {
+        setAuthError(`Error al registrarse: ${error.message}`);
+      }
+      return;
     }
+
+    // Supabase a veces devuelve data.user sin error aunque el correo ya existe
+    // (cuando "Confirm email" está desactivado). Detectarlo por identities vacías.
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setAuthError('Este correo ya está registrado. Por favor inicia sesión en la pestaña "Iniciar sesión".');
+      return;
+    }
+
+    setSuccessMsg('✓ Cuenta creada correctamente. Revisa tu correo para confirmarla e inicia sesión.');
+    setTab('login');
+    reset();
   };
 
   return (
@@ -70,7 +91,18 @@ export function IntranetLogin() {
           </div>
 
           {authError && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-sm text-sm">{authError}</div>
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-sm text-sm">
+              <p>{authError}</p>
+              {authError.includes('ya está registrado') && (
+                <button
+                  type="button"
+                  onClick={() => { setTab('login'); setAuthError(''); }}
+                  className="mt-2 text-primary underline text-xs font-semibold hover:opacity-80"
+                >
+                  Ir a iniciar sesión →
+                </button>
+              )}
+            </div>
           )}
           {successMsg && (
             <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-sm text-sm">{successMsg}</div>
