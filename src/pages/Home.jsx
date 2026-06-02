@@ -153,9 +153,7 @@ export function Home() {
               <h2 className="section-title mb-4">Liderada por una Especialista de Referencia</h2>
               <div className="section-divider" />
               <p className="text-brand-text leading-relaxed mb-4">
-                La <strong className="text-brand-dark">Dra. Luz Sotelo Valenzuela</strong> es médico anestesióloga con especialización en Medicina del Dolor y Cuidados Paliativos.
-                {/* [PENDIENTE: validar cargo actual y hospital] */}
-                 Con amplia experiencia en el manejo multidisciplinario del dolor, lidera programas de formación dirigidos a profesionales de la salud comprometidos con la excelencia clínica.
+                La <strong className="text-brand-dark">Dra. Luz Sotelo Valenzuela</strong> es médico anestesióloga con especialización en Medicina del Dolor y Cuidados Paliativos. Con amplia experiencia en el manejo multidisciplinario del dolor, lidera programas de formación dirigidos a profesionales de la salud comprometidos con la excelencia clínica.
               </p>
               <p className="text-brand-text leading-relaxed mb-6">
                 La Health Academy nace con el propósito de elevar el estándar en la formación especializada en dolor, acercando a los profesionales de salud a los conocimientos y herramientas más actualizados del campo.
