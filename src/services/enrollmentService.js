@@ -2,9 +2,14 @@ import { supabase } from '../lib/supabase';
 
 /** Cursos a los que el usuario actual está inscrito */
 export async function getMyEnrolledCourses() {
+  // Obtener el uid del usuario autenticado actual
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('course_enrollments')
     .select('course_id, enrolled_at, courses(*)')
+    .eq('user_id', user.id)           // ← filtro por usuario actual
     .order('enrolled_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(e => ({ ...e.courses, enrolled_at: e.enrolled_at }));
