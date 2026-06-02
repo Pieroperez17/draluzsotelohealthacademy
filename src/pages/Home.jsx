@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Users, Award, BookOpen, MessageCircle } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon, TikTokIcon } from '../components/ui/SocialIcons';
 import draSoteloImg from '../assets/Dra-Luz-Sotelo-768x768.jpg';
+import bannerImg from '../assets/Banner.webp';
 import { CourseCard } from '../components/courses/CourseCard';
 import { TestimonialCard } from '../components/testimonials/TestimonialCard';
 import { getCourses } from '../services/coursesService';
@@ -44,8 +45,11 @@ export function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="bg-brand-dark text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark to-primary/20 pointer-events-none" />
+      <section className="text-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <img src={bannerImg} alt="" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
         <div className="container-site relative py-20 lg:py-28">
           <div className="max-w-3xl">
             <div className="inline-block bg-primary border border-primary text-white text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wider">
