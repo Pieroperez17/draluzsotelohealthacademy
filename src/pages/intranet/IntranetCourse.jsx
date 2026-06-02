@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Video, Link2, FileText, Send, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Video, Link2, FileText, Send, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
 import { getCourseMessages, sendMessage, subscribeToCourseChat, unsubscribeFromChat } from '../../services/chatService';
 import { getCourseResources } from '../../services/resourceService';
 import { getMyEnrolledCourses } from '../../services/enrollmentService';
@@ -112,8 +112,12 @@ export function IntranetCourse() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-brand-gray bg-white rounded-t-sm">
-        {[['chat', 'Chat del grupo', MessageCircle], ['recursos', 'Recursos', FileText]].map(([key, label, Icon]) => (
+      <div className="flex border-b border-brand-gray bg-white rounded-t-sm overflow-x-auto">
+        {[
+          ['chat', 'Chat del grupo', MessageCircle],
+          ['recursos', 'Recursos', FileText],
+          ...(course.location_lat ? [['ubicacion', 'Ubicación', MapPin]] : []),
+        ].map(([key, label, Icon]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -226,6 +230,40 @@ export function IntranetCourse() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* UBICACIÓN */}
+      {tab === 'ubicacion' && course.location_lat && course.location_lng && (
+        <div className="bg-white card rounded-t-none border-t-0 overflow-hidden">
+          {/* Address + Google Maps link */}
+          <div className="flex items-start gap-3 p-4 bg-brand-lightgray border-b border-brand-gray">
+            <MapPin size={18} className="text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-brand-dark text-sm">Dirección</p>
+              <p className="text-brand-text text-sm mt-0.5 leading-relaxed">{course.location_address}</p>
+            </div>
+            <a
+              href={`https://www.google.com/maps?q=${course.location_lat},${course.location_lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary px-3 py-1.5 rounded-sm hover:bg-primary hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
+            >
+              <ExternalLink size={12} />
+              Ver en Google Maps
+            </a>
+          </div>
+
+          {/* OpenStreetMap iframe */}
+          <iframe
+            title="Ubicación del curso"
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${course.location_lng - 0.01},${course.location_lat - 0.007},${course.location_lng + 0.01},${course.location_lat + 0.007}&layer=mapnik&marker=${course.location_lat},${course.location_lng}`}
+            width="100%"
+            height="380"
+            frameBorder="0"
+            scrolling="no"
+            className="block"
+          />
         </div>
       )}
     </div>

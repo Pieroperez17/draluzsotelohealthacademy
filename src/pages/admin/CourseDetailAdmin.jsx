@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Video, Plus, Trash2, Save, Link2, FileText, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Video, Plus, Trash2, Save, Link2, FileText, X, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import { getCourses, updateCourse } from '../../services/coursesService';
 import { getCourseResources, addCourseResource, deleteCourseResource } from '../../services/resourceService';
 import { getEnrollmentsByCourse } from '../../services/enrollmentService';
+import { LocationPicker } from '../../components/ui/LocationPicker';
 import { useForm } from 'react-hook-form';
 
 function Toast({ message, type, onClose }) {
@@ -25,6 +26,8 @@ export function CourseDetailAdmin() {
   const [enrollments, setEnrollments] = useState([]);
   const [toast, setToast] = useState(null);
   const [savingLink, setSavingLink] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [savingLocation, setSavingLocation] = useState(false);
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   const { register: regLink, handleSubmit: handleLink, reset: resetLink } = useForm();
@@ -38,7 +41,19 @@ export function CourseDetailAdmin() {
       const all = await getCourses({ visibleOnly: false });
       const found = all.find(c => c.id === courseId);
       setCourse(found || null);
-      if (found) resetLink({ meeting_link: found.meeting_link || '' });
+      if (found) {
+        resetLink({ meeting_link: found.meeting_link || '' });
+        // Cargar ubicación guardada
+        if (found.location_lat && found.location_lng) {
+          setLocation({
+            address: found.location_address || '',
+            lat: found.location_lat,
+            lng: found.location_lng,
+          });
+        } else {
+          setLocation(null);
+        }
+      }
     } catch (err) {
       showToast(`Error cargando curso: ${err.message}`, 'error');
     }
@@ -72,6 +87,23 @@ export function CourseDetailAdmin() {
       showToast(`Error: ${err.message}`, 'error');
     } finally {
       setSavingLink(false);
+    }
+  };
+
+  const saveLocation = async () => {
+    setSavingLocation(true);
+    try {
+      await updateCourse(courseId, {
+        location_address: location?.address ?? null,
+        location_lat: location?.lat ?? null,
+        location_lng: location?.lng ?? null,
+      });
+      showToast(location ? 'Ubicación guardada correctamente' : 'Ubicación eliminada');
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      setSavingLocation(false);
     }
   };
 
@@ -230,6 +262,31 @@ export function CourseDetailAdmin() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Location */}
+      <div className="bg-white card p-6 mt-6">
+        <div className="flex items-center gap-2 mb-5">
+          <MapPin size={18} className="text-primary" />
+          <h3 className="font-semibold text-brand-dark">Ubicación del curso <span className="text-brand-midgray text-sm font-normal">(opcional)</span></h3>
+        </div>
+
+        <LocationPicker value={location} onChange={setLocation} />
+
+        <div className="flex justify-end mt-4">
+          <button
+            type="button"
+            onClick={saveLocation}
+            disabled={savingLocation}
+            className="flex items-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-sm hover:bg-primary-dark disabled:opacity-60 transition-colors text-sm"
+          >
+            {savingLocation
+              ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              : <Save size={15} />
+            }
+            {savingLocation ? 'Guardando...' : 'Guardar ubicación'}
+          </button>
+        </div>
       </div>
     </div>
   );
