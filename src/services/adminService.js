@@ -1,5 +1,13 @@
 import { supabase } from '../lib/supabase';
 
+// Elimina campos de solo lectura generados por Supabase antes de insert/update
+const READONLY = ['id', 'created_at', 'updated_at'];
+function strip(obj) {
+  const clean = { ...obj };
+  READONLY.forEach(k => delete clean[k]);
+  return clean;
+}
+
 // ── TESTIMONIALS ──────────────────────────────────────────────────────────────
 
 export async function getAllTestimonials() {
@@ -14,7 +22,7 @@ export async function getAllTestimonials() {
 export async function createTestimonial(payload) {
   const { data, error } = await supabase
     .from('testimonials')
-    .insert([payload])
+    .insert([strip(payload)])
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -24,7 +32,7 @@ export async function createTestimonial(payload) {
 export async function updateTestimonial(id, updates) {
   const { data, error } = await supabase
     .from('testimonials')
-    .update(updates)
+    .update(strip(updates))
     .eq('id', id)
     .select()
     .single();
@@ -70,7 +78,7 @@ export async function getAllSocialLinks() {
 export async function updateSocialLink(id, updates) {
   const { data, error } = await supabase
     .from('social_links')
-    .update(updates)
+    .update(strip(updates))
     .eq('id', id)
     .select()
     .single();
@@ -81,7 +89,7 @@ export async function updateSocialLink(id, updates) {
 export async function createSocialLink(payload) {
   const { data, error } = await supabase
     .from('social_links')
-    .insert([payload])
+    .insert([strip(payload)])
     .select()
     .single();
   if (error) throw new Error(error.message);
