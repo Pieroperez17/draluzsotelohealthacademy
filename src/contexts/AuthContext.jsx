@@ -29,18 +29,33 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
-      await fetchRole(session?.user?.id);
-      setLoading(false);
+      fetchRole(session?.user?.id).finally(() => {
+        if (mounted) setLoading(false);
+      });
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // IMPORTANTE: NO usar async/await con llamadas a Supabase directamente dentro
+    // de este callback. supabase-js ejecuta este callback mientras mantiene un lock
+    // de autenticación interno; cualquier query (supabase.from / getSession) intentaría
+    // readquirir el mismo lock → deadlock → la app se cuelga al iniciar sesión.
+    // Por eso diferimos fetchRole con setTimeout(0), fuera del contexto del lock.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
       setSession(session);
-      await fetchRole(session?.user?.id);
+      setTimeout(() => {
+        if (mounted) fetchRole(session?.user?.id);
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email, password) => {
