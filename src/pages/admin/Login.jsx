@@ -34,7 +34,6 @@ export function Login() {
       .single();
 
     if (profile?.role !== 'admin') {
-      await signIn('', ''); // forzar logout limpiando estado
       await supabase.auth.signOut();
       setAuthError('Acceso denegado. Esta sección es solo para administradores.');
       return;
