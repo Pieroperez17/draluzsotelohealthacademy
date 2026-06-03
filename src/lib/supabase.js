@@ -1,18 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-// Prefer anon JWT key (full DB access); fall back to publishable key for compatibility
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Anon key is public by design (exposed in every visitor's browser)
+const SUPABASE_URL = 'https://etpqawzqpaxlpdaopymi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0cHFhd3pxcGF4bHBkYW9weW1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjI3NTgsImV4cCI6MjA5NTczODc1OH0._zL9TTwf4GANKPBG1gNXymCZNoQ9CErX2TrZFHFfmS0';
 
-const isConfigured =
-  supabaseUrl &&
-  supabaseKey &&
-  !supabaseUrl.includes('your-project');
-
-export const supabase = isConfigured
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
-
-export const isSupabaseReady = isConfigured;
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const isSupabaseReady = true;
