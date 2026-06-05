@@ -1,11 +1,147 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Video, Plus, Trash2, Save, Link2, FileText, X, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
+import { ArrowLeft, Video, Plus, Trash2, Save, Link2, FileText, X, CheckCircle, AlertCircle, MapPin, PlayCircle, Megaphone, Eye, EyeOff } from 'lucide-react';
 import { getCourses, updateCourse } from '../../services/coursesService';
 import { getCourseResources, addCourseResource, deleteCourseResource } from '../../services/resourceService';
+import { getContentBlocks, createContentBlock, updateContentBlock, deleteContentBlock } from '../../services/contentService';
+import { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '../../services/announcementService';
 import { getEnrollmentsByCourse } from '../../services/enrollmentService';
 import { LocationPicker } from '../../components/ui/LocationPicker';
 import { useForm } from 'react-hook-form';
+
+/** Editor de un bloque de contenido existente (título, descripción, video, visibilidad). */
+function ContentBlockRow({ block, onSave, onDelete }) {
+  const [title, setTitle] = useState(block.title || '');
+  const [description, setDescription] = useState(block.description || '');
+  const [videoUrl, setVideoUrl] = useState(block.video_url || '');
+  const [visible, setVisible] = useState(block.is_visible);
+  const [saving, setSaving] = useState(false);
+
+  const dirty =
+    title !== (block.title || '') ||
+    description !== (block.description || '') ||
+    videoUrl !== (block.video_url || '') ||
+    visible !== block.is_visible;
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(block.id, { title, description, video_url: videoUrl, is_visible: visible });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border border-brand-gray rounded-sm p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Título del bloque"
+          className="flex-1 border border-brand-gray rounded-sm px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+        />
+        <button
+          type="button"
+          onClick={() => setVisible(v => !v)}
+          title={visible ? 'Visible para alumnos' : 'Oculto'}
+          className={`flex items-center gap-1 px-2.5 py-2 rounded-sm text-xs font-semibold transition-colors ${
+            visible ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-brand-gray text-brand-midgray hover:bg-brand-lightgray'
+          }`}
+        >
+          {visible ? <Eye size={14} /> : <EyeOff size={14} />}
+          {visible ? 'Visible' : 'Oculto'}
+        </button>
+      </div>
+      <textarea
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Descripción / contenido del bloque (opcional)"
+        rows={2}
+        className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-y"
+      />
+      <input
+        type="url"
+        value={videoUrl}
+        onChange={e => setVideoUrl(e.target.value)}
+        placeholder="URL del video (YouTube, Vimeo o .mp4)"
+        className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+      />
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => onDelete(block.id)}
+          className="flex items-center gap-1.5 px-3 py-2 text-brand-midgray hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors text-sm"
+        >
+          <Trash2 size={14} /> Eliminar
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={!dirty || saving}
+          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-sm hover:bg-primary-dark disabled:opacity-50 transition-colors text-sm font-semibold"
+        >
+          {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+          Guardar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Editor de un anuncio existente. */
+function AnnouncementRow({ announcement, onSave, onDelete }) {
+  const [title, setTitle] = useState(announcement.title || '');
+  const [body, setBody] = useState(announcement.body || '');
+  const [saving, setSaving] = useState(false);
+
+  const dirty = title !== (announcement.title || '') || body !== (announcement.body || '');
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(announcement.id, { title, body });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border border-brand-gray rounded-sm p-4 space-y-3">
+      <input
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Título (opcional)"
+        className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+      />
+      <textarea
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        placeholder="Mensaje del anuncio"
+        rows={3}
+        className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-y"
+      />
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => onDelete(announcement.id)}
+          className="flex items-center gap-1.5 px-3 py-2 text-brand-midgray hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors text-sm"
+        >
+          <Trash2 size={14} /> Eliminar
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={!dirty || saving || !body.trim()}
+          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-sm hover:bg-primary-dark disabled:opacity-50 transition-colors text-sm font-semibold"
+        >
+          {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+          Guardar
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function Toast({ message, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
@@ -23,11 +159,18 @@ export function CourseDetailAdmin() {
   const courseId = Number(id);
   const [course, setCourse] = useState(null);
   const [resources, setResources] = useState([]);
+  const [contentBlocks, setContentBlocks] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [toast, setToast] = useState(null);
   const [savingLink, setSavingLink] = useState(false);
   const [location, setLocation] = useState(null);
   const [savingLocation, setSavingLocation] = useState(false);
+  // Formularios para agregar contenido / anuncios
+  const [newBlock, setNewBlock] = useState({ title: '', description: '', video_url: '' });
+  const [addingBlock, setAddingBlock] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', body: '' });
+  const [addingAnnouncement, setAddingAnnouncement] = useState(false);
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   const { register: regLink, handleSubmit: handleLink, reset: resetLink } = useForm();
@@ -72,6 +215,20 @@ export function CourseDetailAdmin() {
       setEnrollments(e);
     } catch (err) {
       showToast(`Error cargando alumnos: ${err.message}`, 'error');
+    }
+
+    // Cargar bloques de contenido (independiente)
+    try {
+      setContentBlocks(await getContentBlocks(courseId));
+    } catch (err) {
+      showToast(`Error cargando contenido: ${err.message}`, 'error');
+    }
+
+    // Cargar anuncios (independiente)
+    try {
+      setAnnouncements(await getAnnouncements(courseId));
+    } catch (err) {
+      showToast(`Error cargando anuncios: ${err.message}`, 'error');
     }
   };
 
@@ -123,6 +280,82 @@ export function CourseDetailAdmin() {
     try {
       await deleteCourseResource(resId);
       showToast('Recurso eliminado');
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  // ── Contenido (bloques) ──────────────────────────────────────────────────
+  const handleAddBlock = async (e) => {
+    e.preventDefault();
+    if (!newBlock.title.trim()) { showToast('El bloque necesita un título', 'error'); return; }
+    setAddingBlock(true);
+    try {
+      await createContentBlock(courseId, { ...newBlock, position: contentBlocks.length });
+      showToast('Bloque de contenido agregado');
+      setNewBlock({ title: '', description: '', video_url: '' });
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      setAddingBlock(false);
+    }
+  };
+
+  const handleSaveBlock = async (id, updates) => {
+    try {
+      await updateContentBlock(id, updates);
+      showToast('Bloque actualizado');
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  const handleDeleteBlock = async (id) => {
+    if (!window.confirm('¿Eliminar este bloque de contenido?')) return;
+    try {
+      await deleteContentBlock(id);
+      showToast('Bloque eliminado');
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  // ── Anuncios ─────────────────────────────────────────────────────────────
+  const handleAddAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncement.body.trim()) { showToast('El anuncio no puede estar vacío', 'error'); return; }
+    setAddingAnnouncement(true);
+    try {
+      await createAnnouncement(courseId, newAnnouncement);
+      showToast('Anuncio publicado');
+      setNewAnnouncement({ title: '', body: '' });
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    } finally {
+      setAddingAnnouncement(false);
+    }
+  };
+
+  const handleSaveAnnouncement = async (id, updates) => {
+    try {
+      await updateAnnouncement(id, updates);
+      showToast('Anuncio actualizado');
+      load();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('¿Eliminar este anuncio?')) return;
+    try {
+      await deleteAnnouncement(id);
+      showToast('Anuncio eliminado');
       load();
     } catch (err) {
       showToast(`Error: ${err.message}`, 'error');
@@ -259,6 +492,101 @@ export function CourseDetailAdmin() {
                   <Trash2 size={14} />
                 </button>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Contenido (bloques tipo acordeón) */}
+      <div className="bg-white card p-6 mt-6">
+        <div className="flex items-center gap-2 mb-1">
+          <PlayCircle size={18} className="text-primary" />
+          <h3 className="font-semibold text-brand-dark">Contenido del curso</h3>
+        </div>
+        <p className="text-brand-midgray text-sm mb-5">Bloques con título y video (YouTube, Vimeo o .mp4) que el alumno verá como acordeón.</p>
+
+        {/* Agregar bloque */}
+        <form onSubmit={handleAddBlock} className="space-y-3 mb-6 p-4 bg-brand-lightgray rounded-sm">
+          <input
+            placeholder="Título del bloque (ej. Módulo 1: Introducción)"
+            value={newBlock.title}
+            onChange={e => setNewBlock(b => ({ ...b, title: e.target.value }))}
+            className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+          />
+          <textarea
+            placeholder="Descripción / contenido (opcional)"
+            rows={2}
+            value={newBlock.description}
+            onChange={e => setNewBlock(b => ({ ...b, description: e.target.value }))}
+            className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-y"
+          />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="url"
+              placeholder="URL del video (https://youtube.com/... o .mp4)"
+              value={newBlock.video_url}
+              onChange={e => setNewBlock(b => ({ ...b, video_url: e.target.value }))}
+              className="flex-1 border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+            />
+            <button type="submit" disabled={addingBlock}
+              className="bg-primary text-white px-4 py-2 rounded-sm hover:bg-primary-dark disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5 text-sm font-semibold whitespace-nowrap">
+              {addingBlock ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={15} />}
+              Agregar bloque
+            </button>
+          </div>
+        </form>
+
+        {/* Lista de bloques */}
+        {contentBlocks.length === 0 ? (
+          <p className="text-brand-midgray text-sm text-center py-6">No hay bloques de contenido aún.</p>
+        ) : (
+          <div className="space-y-3">
+            {contentBlocks.map(block => (
+              <ContentBlockRow key={block.id} block={block} onSave={handleSaveBlock} onDelete={handleDeleteBlock} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Anuncios */}
+      <div className="bg-white card p-6 mt-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Megaphone size={18} className="text-primary" />
+          <h3 className="font-semibold text-brand-dark">Anuncios</h3>
+        </div>
+        <p className="text-brand-midgray text-sm mb-5">Mensajes para todos los alumnos inscritos en este curso.</p>
+
+        {/* Agregar anuncio */}
+        <form onSubmit={handleAddAnnouncement} className="space-y-3 mb-6 p-4 bg-brand-lightgray rounded-sm">
+          <input
+            placeholder="Título (opcional)"
+            value={newAnnouncement.title}
+            onChange={e => setNewAnnouncement(a => ({ ...a, title: e.target.value }))}
+            className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+          />
+          <textarea
+            placeholder="Escribe el anuncio para los alumnos..."
+            rows={3}
+            value={newAnnouncement.body}
+            onChange={e => setNewAnnouncement(a => ({ ...a, body: e.target.value }))}
+            className="w-full border border-brand-gray rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-y"
+          />
+          <div className="flex justify-end">
+            <button type="submit" disabled={addingAnnouncement}
+              className="bg-primary text-white px-4 py-2 rounded-sm hover:bg-primary-dark disabled:opacity-60 transition-colors flex items-center gap-1.5 text-sm font-semibold">
+              {addingAnnouncement ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={15} />}
+              Publicar anuncio
+            </button>
+          </div>
+        </form>
+
+        {/* Lista de anuncios */}
+        {announcements.length === 0 ? (
+          <p className="text-brand-midgray text-sm text-center py-6">No hay anuncios publicados aún.</p>
+        ) : (
+          <div className="space-y-3">
+            {announcements.map(a => (
+              <AnnouncementRow key={a.id} announcement={a} onSave={handleSaveAnnouncement} onDelete={handleDeleteAnnouncement} />
             ))}
           </div>
         )}

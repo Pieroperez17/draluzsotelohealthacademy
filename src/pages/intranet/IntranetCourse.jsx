@@ -1,10 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Video, Link2, FileText, Send, MessageCircle, MapPin, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Video, Link2, FileText, Send, MessageCircle, MapPin, ExternalLink, Megaphone, PlayCircle, ChevronDown } from 'lucide-react';
 import { getCourseMessages, sendMessage, subscribeToCourseChat, unsubscribeFromChat } from '../../services/chatService';
 import { getCourseResources } from '../../services/resourceService';
+import { getContentBlocks } from '../../services/contentService';
+import { getAnnouncements } from '../../services/announcementService';
 import { getMyEnrolledCourses } from '../../services/enrollmentService';
+import { getVideoEmbed } from '../../lib/video';
 import { useAuth } from '../../contexts/AuthContext';
+
+/** Reproductor que adapta la URL (YouTube, Vimeo o archivo directo). */
+function VideoEmbed({ url }) {
+  const embed = getVideoEmbed(url);
+  if (!embed) return null;
+  if (embed.type === 'iframe') {
+    return (
+      <div className="relative w-full overflow-hidden rounded-sm bg-black" style={{ paddingTop: '56.25%' }}>
+        <iframe
+          src={embed.src}
+          title="Video del curso"
+          className="absolute inset-0 w-full h-full"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+  if (embed.type === 'video') {
+    return <video src={embed.src} controls className="w-full rounded-sm bg-black" />;
+  }
+  return (
+    <a href={embed.src} target="_blank" rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 text-primary text-sm font-semibold hover:underline">
+      <PlayCircle size={16} /> Ver video
+    </a>
+  );
+}
 
 const RESOURCE_ICONS = { link: Link2, guide: FileText, video: Video, document: FileText };
 const RESOURCE_LABELS = { link: 'Enlace', guide: 'Guía', video: 'Video', document: 'Documento' };
@@ -23,12 +55,23 @@ export function IntranetCourse() {
 
   const [course, setCourse] = useState(null);
   const [resources, setResources] = useState([]);
+  const [contentBlocks, setContentBlocks] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [openBlocks, setOpenBlocks] = useState(new Set());
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
   const [sending, setSending] = useState(false);
-  const [tab, setTab] = useState('chat'); // 'chat' | 'recursos'
+  const [tab, setTab] = useState('contenido'); // 'contenido' | 'anuncios' | 'chat' | 'recursos' | 'ubicacion'
   const messagesEndRef = useRef(null);
   const channelRef = useRef(null);
+
+  const toggleBlock = (blockId) => {
+    setOpenBlocks(prev => {
+      const next = new Set(prev);
+      next.has(blockId) ? next.delete(blockId) : next.add(blockId);
+      return next;
+    });
+  };
 
   const userName = session?.user?.user_metadata?.full_name || session?.user?.email || 'Alumno';
   const userId = session?.user?.id;
@@ -41,6 +84,9 @@ export function IntranetCourse() {
     });
     // Cargar recursos
     getCourseResources(courseId).then(setResources);
+    // Cargar contenido (bloques) y anuncios
+    getContentBlocks(courseId).then(setContentBlocks).catch(() => setContentBlocks([]));
+    getAnnouncements(courseId).then(setAnnouncements).catch(() => setAnnouncements([]));
     // Cargar mensajes iniciales
     getCourseMessages(courseId).then(setMessages);
 
@@ -114,6 +160,8 @@ export function IntranetCourse() {
       {/* Tabs */}
       <div className="flex border-b border-brand-gray bg-white rounded-t-sm overflow-x-auto">
         {[
+          ['contenido', 'Contenido', PlayCircle],
+          ['anuncios', 'Anuncios', Megaphone],
           ['chat', 'Chat del grupo', MessageCircle],
           ['recursos', 'Recursos', FileText],
           ...(course.location_lat ? [['ubicacion', 'Ubicación', MapPin]] : []),
@@ -121,7 +169,7 @@ export function IntranetCourse() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               tab === key ? 'border-primary text-primary' : 'border-transparent text-brand-midgray hover:text-brand-dark'
             }`}
           >
@@ -130,9 +178,80 @@ export function IntranetCourse() {
             {key === 'chat' && messages.length > 0 && (
               <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">{messages.length}</span>
             )}
+            {key === 'anuncios' && announcements.length > 0 && (
+              <span className="bg-primary/10 text-primary text-xs px-1.5 py-0.5 rounded-full">{announcements.length}</span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* CONTENIDO */}
+      {tab === 'contenido' && (
+        <div className="bg-white card rounded-t-none border-t-0 p-6">
+          {contentBlocks.length === 0 ? (
+            <div className="text-center py-12 text-brand-midgray">
+              <PlayCircle size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">El administrador aún no ha publicado contenido para este curso.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {contentBlocks.map(block => {
+                const isOpen = openBlocks.has(block.id);
+                return (
+                  <div key={block.id} className="border border-brand-gray rounded-sm overflow-hidden">
+                    <button
+                      onClick={() => toggleBlock(block.id)}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-brand-lightgray transition-colors"
+                    >
+                      <span className="flex items-center gap-2.5 min-w-0">
+                        <PlayCircle size={17} className="text-primary flex-shrink-0" />
+                        <span className="font-semibold text-brand-dark text-sm truncate">{block.title || 'Sin título'}</span>
+                      </span>
+                      <ChevronDown size={18} className={`text-brand-midgray flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4 pt-1 space-y-3 border-t border-brand-gray">
+                        {block.description && (
+                          <p className="text-brand-text text-sm leading-relaxed whitespace-pre-line">{block.description}</p>
+                        )}
+                        {block.video_url && <VideoEmbed url={block.video_url} />}
+                        {!block.description && !block.video_url && (
+                          <p className="text-brand-midgray text-sm italic">Este bloque aún no tiene contenido.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ANUNCIOS */}
+      {tab === 'anuncios' && (
+        <div className="bg-white card rounded-t-none border-t-0 p-6">
+          {announcements.length === 0 ? (
+            <div className="text-center py-12 text-brand-midgray">
+              <Megaphone size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No hay anuncios por el momento.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {announcements.map(a => (
+                <div key={a.id} className="border-l-4 border-primary bg-red-50/40 rounded-r-sm p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Megaphone size={15} className="text-primary flex-shrink-0" />
+                    {a.title && <h4 className="font-semibold text-brand-dark text-sm">{a.title}</h4>}
+                    <span className="text-brand-midgray text-xs ml-auto">{formatDateFull(a.created_at)}</span>
+                  </div>
+                  <p className="text-brand-text text-sm leading-relaxed whitespace-pre-line">{a.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* CHAT */}
       {tab === 'chat' && (
