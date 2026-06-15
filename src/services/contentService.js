@@ -53,3 +53,26 @@ export async function deleteContentBlock(id) {
   const { error } = await supabase.from('course_content_blocks').delete().eq('id', id);
   if (error) throw new Error(error.message);
 }
+
+const VIDEO_BUCKET = 'course-videos';
+
+/** Sube un archivo de video al bucket de Storage y devuelve su URL pública.
+ *  Solo el admin tiene permiso de escritura (RLS sobre storage.objects).
+ *  @param {number} courseId  Curso al que pertenece el video (para organizar carpetas).
+ *  @param {File}   file      Archivo de video seleccionado en el input.
+ *  @returns {Promise<string>} URL pública reproducible del video. */
+export async function uploadCourseVideo(courseId, file) {
+  if (!file) throw new Error('No se seleccionó ningún archivo.');
+
+  // Nombre único conservando la extensión original (.mp4, .webm, etc.)
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+  const path = `curso-${courseId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(VIDEO_BUCKET)
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data } = supabase.storage.from(VIDEO_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
